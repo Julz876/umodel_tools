@@ -26,7 +26,9 @@ You can learn how to install and use the add-on on the
 You can support core feature development and adding more games at
 [Boosty page](https://boosty.to/skarn).
 
-[Patreon page]([https://boosty.to/skarn](https://www.patreon.com/c/KingJulz876)).
+or
+
+[Patreon]([https://boosty.to/skarn](https://www.patreon.com/c/KingJulz876)).
 
 # Roadmap
 - Adding more games. 
