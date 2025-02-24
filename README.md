@@ -4,6 +4,7 @@
 
 [![](https://dcbadge.vercel.app/api/server/DJYZwyegSF)](https://discord.gg/DJYZwyegSF)
 
+A fork from [skarndev repo](https://skarndev.github.io/umodel_tools.html)
 A [Blender](https://blender.org) add-on featuring import of [Unreal Engine](https://www.unrealengine.com)
 games static meshes (stored in-game as .uasset) and maps (stored in-game as .umap). It provides basic support for many
 UE games, while [some](https://skarndev.github.io/umodel_tools/supported_games.html) have dedicated improved support.
@@ -12,7 +13,7 @@ UE games, while [some](https://skarndev.github.io/umodel_tools/supported_games.h
 
 # Features
 - Unreal Engine games map (.umap) and (.uasset) import.
-- Creation of asset library in Blender out of game's assets.
+- Creation of an asset library in Blender out of game's assets.
 - PBR materials.
 - Lights (experimental support).
 
@@ -21,8 +22,9 @@ You can learn how to install and use the add-on on the
 [documentation page](https://skarndev.github.io/umodel_tools/).
 
 # Support
-You can support core feature development and adding more games at my
+You can support core feature development and adding more games at
 [Boosty page](https://boosty.to/skarn).
+[Patreon page]([https://boosty.to/skarn](https://www.patreon.com/c/KingJulz876)).
 
 # Roadmap
 - Adding more games. 
