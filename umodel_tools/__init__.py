@@ -16,12 +16,10 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+import bpy
 import os
 import sys
 import traceback
-
-import bpy
-
 
 # include custom lib vendoring dir
 parent_dir = os.path.abspath(os.path.dirname(__file__))
@@ -31,13 +29,12 @@ sys.path.append(vendor_dir)
 
 from . import auto_load  # nopep8 pylint: disable=wrong-import-position
 
-
 #: Addon description for Blender. Displayed in settings.
 bl_info = {
     "name": "UModel Tools",
-    "author": "Skarn",
-    "version": (1, 0),
-    "blender": (3, 40, 0),
+    "author": "Skarn, KingxJulz",
+    "version": (1,0,5),
+    "blender": (4,2,0),
     "description": "Import Unreal Engine games scenes and assets into Blender.",
     "category": "Import-Export"
 }

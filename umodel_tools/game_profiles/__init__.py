@@ -53,7 +53,10 @@ class GameHandler(t.Protocol):
                                     tex_type: str,
                                     tex_short_name: str,
                                     img_node: bpy.types.ShaderNodeTexImage,
-                                    ao_mix_node: bpy.types.ShaderNodeMix,
+                                    main_shader: bpy.types.ShaderNodeTree,
+                                    orm_shader: bpy.types.ShaderNodeTree,
+                                    odmask_shader: bpy.types.ShaderNodeTree,
+                                    ao_mix_node: bpy.types.ShaderNodeAmbientOcclusion,
                                     bsdf_node: bpy.types.ShaderNodeBsdfPrincipled,
                                     out_node: bpy.types.ShaderNodeOutputMaterial) -> None:
         """Handles adding texture maps to a PBR material.
@@ -62,7 +65,7 @@ class GameHandler(t.Protocol):
         :param tex_type: Current texture type.
         :param tex_short_name: Basename of the texture file without extension.
         :param img_node: Image node in the material's node tree.
-        :param ao_mix_node: Ambient Occlusion mixing node in the material's node tree.
+        :param main_shader: a custom shader node group.
         :param bsdf_node: PrincipledBSDF node in the material's node tree.
         :param out_node: Material output node in the material's node tree.
         """

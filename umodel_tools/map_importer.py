@@ -4,7 +4,7 @@ import os
 import typing as t
 import enum
 
-import mathutils as mu
+import mathutils
 import bpy
 import tqdm
 
@@ -20,7 +20,7 @@ def split_object_path(object_path):
     path_parts = object_path.split(".")
 
     if len(path_parts) > 1:
-        # Usually works, but will fail If the path contains multiple periods.
+        # Usually works, but will fail If the path contains mathutilsltiple periods.
         return path_parts[0]
 
     # Nothing to do
@@ -51,16 +51,16 @@ class InstanceTransform:
         self.scale = scale
 
     @property
-    def matrix_4x4(self) -> mu.Matrix:
-        return mu.Matrix.LocRotScale(mu.Vector(self.pos),
-                                     mu.Euler(self.rot_euler, 'XYZ'),
-                                     mu.Vector(self.scale))
+    def matrix_4x4(self) -> mathutils.Matrix:
+        return mathutils.Matrix.LocRotScale(mathutils.Vector(self.pos),
+                                     mathutils.Euler(self.rot_euler, 'XYZ'),
+                                     mathutils.Vector(self.scale))
 
 
 def get_parent_transform_matrix(json_obj,
                                 obj_type: str,
                                 obj_outer: str,
-                                obj_name: str) -> mu.Matrix:
+                                obj_name: str) -> mathutils.Matrix:
 
     for entity in json_obj:
         if (((entity_type := entity.get("Type", None)) is None or entity_type != obj_type)
@@ -115,7 +115,7 @@ class StaticMesh:
     asset_path: str = ""
     transform: InstanceTransform
     instance_transforms: list[InstanceTransform]
-    parent_mtx: t.Optional[mu.Matrix] = None
+    parent_mtx: t.Optional[mathutils.Matrix] = None
 
     # these are just properties to help with debugging
     no_entity: bool = False
@@ -211,8 +211,8 @@ class StaticMesh:
                             trs.pos = (pos.get("X") / 100, pos.get("Y") / -100, pos.get("Z") / 100)
 
                         if (rot := trs_data.get("Rotation", None)) is not None:
-                            rot_quat = mu.Quaternion((rot.get("W"), rot.get("X"), rot.get("Y"), rot.get("Z")))
-                            quat_to_euler: mu.Euler = rot_quat.to_euler()  # pylint: disable=no-value-for-parameter
+                            rot_quat = mathutils.Quaternion((rot.get("W"), rot.get("X"), rot.get("Y"), rot.get("Z")))
+                            quat_to_euler: mathutils.Euler = rot_quat.to_euler()  # pylint: disable=no-value-for-parameter
                             trs.rot_euler = (-quat_to_euler.x, quat_to_euler.y, -quat_to_euler.z)
 
                         if (scale := trs_data.get("Scale3D", None)) is not None:
@@ -256,7 +256,7 @@ class StaticMesh:
                 new_obj.scale = (trs.scale[0], trs.scale[1], trs.scale[2])
                 new_obj.location = (trs.pos[0], trs.pos[1], trs.pos[2])
                 new_obj.rotation_mode = 'XYZ'
-                new_obj.rotation_euler = mu.Euler((trs.rot_euler[0], trs.rot_euler[1], trs.rot_euler[2]), 'XYZ')
+                new_obj.rotation_euler = mathutils.Euler((trs.rot_euler[0], trs.rot_euler[1], trs.rot_euler[2]), 'XYZ')
             else:
                 new_obj.matrix_world = self.parent_mtx @ trs.matrix_4x4
 
@@ -303,7 +303,7 @@ class GameLight:
     rot: tuple[float, float, float] = (0.0, 0.0, 0.0)
     scale: tuple[float, float, float] = (1.0, 1.0, 1.0)
     color: tuple[float, float, float] = (1.0, 1.0, 1.0)
-    parent_mtx: t.Optional[mu.Matrix] = None
+    parent_mtx: t.Optional[mathutils.Matrix] = None
     intensity: float = math.pi
     intensity_units: IntensityUnits = IntensityUnits.Unitless
     cone_angle: float
@@ -379,7 +379,7 @@ class GameLight:
                 ((b[0] * temp + b[1]) * temp + b[2]) * temp + b[3])
 
     @staticmethod
-    def quaternion_to_euler(quaternion: mu.Quaternion) -> tuple[float, float, float]:
+    def quaternion_to_euler(quaternion: mathutils.Quaternion) -> tuple[float, float, float]:
         w, y, x, z = quaternion
         roll = math.atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y))
         pitch = math.asin(max(min(2 * (w * y - z * x), 1), -1))
@@ -398,7 +398,7 @@ class GameLight:
         :return: Euler angle as tuple in Blender's coordinate space.
         """
 
-        euler = mu.Euler((
+        euler = mathutils.Euler((
             math.radians(x),
             math.radians(y),
             math.radians(z)
@@ -407,7 +407,7 @@ class GameLight:
         quat = euler.to_quaternion()  # pylint: disable=assignment-from-no-return
 
         # swizzle the quaternion
-        quat = mu.Quaternion([quat.w, quat.x, quat.y, -quat.z])
+        quat = mathutils.Quaternion([quat.w, quat.x, quat.y, -quat.z])
 
         x, y, z = GameLight.quaternion_to_euler(quat)
 
@@ -477,7 +477,7 @@ class GameLight:
         if (temp := props.get("Temperature", None)) is not None:
             self.color = self.temp_to_color(temp)
 
-        # TODO: for now color overrides the temperature based setting if present. Check if they're mutually exclusive.
+        # TODO: for now color overrides the temperature based setting if present. Check if they're mathutilstually exclusive.
         if (color := props.get("LightColor", None)) is not None:
             self.color = self.get_linear_rgb(color)
 
@@ -524,7 +524,7 @@ class GameLight:
             light_obj.scale = (self.scale[0], self.scale[1], self.scale[2])
             light_obj.location = (self.pos[0], self.pos[1], self.pos[2])
             light_obj.rotation_mode = 'XYZ'
-            light_obj.rotation_euler = mu.Euler((self.rot[0], self.rot[1], self.rot[2]), 'XYZ')
+            light_obj.rotation_euler = mathutils.Euler((self.rot[0], self.rot[1], self.rot[2]), 'XYZ')
         else:
             local_mtx = InstanceTransform()
             local_mtx.pos = self.pos

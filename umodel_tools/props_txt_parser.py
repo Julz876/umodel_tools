@@ -18,7 +18,7 @@ def parse_props_txt(props_txt_path: str, mode: t.Literal['MESH']) -> tuple[lark.
 @t.overload
 def parse_props_txt(props_txt_path: str,
                     mode: t.Literal['MATERIAL']
-                    ) -> tuple[lark.Tree, dict[str, str], dict[str, str | float | bool]]:
+                    ) -> tuple[lark.Tree, dict[str, str], dict[str, str | float | bool], dict[str, tuple[float, float, float, float]]]:
     ...
 
 
@@ -69,9 +69,10 @@ def parse_props_txt(props_txt_path: str,
                         material_paths.append(path_value.children[0].value[1:][:-1])
 
                 return ast, material_paths
-
+            
             case 'MATERIAL':
                 texture_infos = {}
+                vector_infos = {}
                 base_prop_overrides = None
 
                 for child in ast.children:
@@ -98,6 +99,33 @@ def parse_props_txt(props_txt_path: str,
                                 tex_type = param_info.children[2].children[0].children[2].children[0].value.strip()
 
                                 texture_infos[tex_type] = tex_path
+                        
+                        case 'VectorParameterValues':
+                            assert array_qual is not None
+                            assert value.data == 'structured_block'
+
+                            for vec_param_def in value.children:
+                                _, _, vec_param = vec_param_def.children
+                                param_info, param_val, _ = vec_param.children
+                                _, _, vec_desc = param_val.children
+
+                                if vec_desc.data != 'structured_block':
+                                    continue  # skip if not a valid vec4
+
+                                param_name = param_info.children[2].children[0].children[2].children[0].value.strip()
+
+                                color = {'r': 0.0, 'g': 0.0, 'b': 0.0, 'a': 1.0}
+                                for channel_def in vec_desc.children:
+                                    channel_name, _, channel = channel_def.children
+                                    channel_name = channel_name.lower()
+
+                                    if channel_name not in {'r', 'g', 'b', 'a'}:
+                                        continue
+
+                                    color[channel_name] = float(channel.children[0].value)
+
+                                vector_infos[param_name] = (color['r'], color['g'], color['b'], color['a'])
+
                         case 'BasePropertyOverrides':
                             assert array_qual is None
                             assert value.data == 'structured_block'
@@ -120,7 +148,7 @@ def parse_props_txt(props_txt_path: str,
 
                                 base_prop_overrides[prop_name] = prop_value
 
-                return ast, texture_infos, base_prop_overrides
+                return ast, texture_infos, base_prop_overrides, vector_infos
 
             case _:
                 raise NotImplementedError()

@@ -7,7 +7,7 @@ import tqdm
 import tqdm.contrib
 import bpy
 import bpy_extras.io_utils
-import mathutils as mu
+import mathutils
 
 from . import utils
 from . import asset_importer
@@ -15,9 +15,11 @@ from . import asset_db
 from . import map_importer
 from . import preferences
 
+from bpy.props import BoolProperty, StringProperty, EnumProperty
+
 
 def _get_object_aabb_verts(obj: bpy.types.Object) -> list[tuple[float, float, float]]:
-    return [obj.matrix_world @ mu.Vector(corner) for corner in obj.bound_box]
+    return [obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box]
 
 
 class UMODELTOOLS_OT_recover_unreal_asset(asset_importer.AssetImporter, bpy.types.Operator):
@@ -128,7 +130,7 @@ class UMODELTOOLS_OT_import_unreal_assets(asset_importer.AssetImporter, bpy.type
     bl_description = "Imports a subdirectory of assets to the specified asset directory"
     bl_options = {'REGISTER', 'UNDO'}
 
-    asset_sub_dir: bpy.props.StringProperty(
+    asset_sub_dir: StringProperty(
         name="Asset subdir",
         description="Path to a subdirectory containing assets"
     )
@@ -180,7 +182,7 @@ class UMODELTOOLS_OT_import_unreal_assets(asset_importer.AssetImporter, bpy.type
         for root, _, files in os.walk(asset_sub_dir_abs):
             for file in files:
                 _, ext = os.path.splitext(file)
-                if ext not in {'.psk', '.pskx'}:
+                if ext not in {'.psk', '.pskx', '.uemodel'}:
                     continue
 
                 total_models += 1
@@ -192,20 +194,31 @@ class UMODELTOOLS_OT_import_unreal_assets(asset_importer.AssetImporter, bpy.type
                 for root, _, files in os.walk(asset_sub_dir_abs):
                     for file in files:
                         file_base, ext = os.path.splitext(file)
-                        if ext not in {'.psk', '.pskx'}:
+                        if ext not in {'.psk', '.pskx', '.uemodel'}:
                             continue
 
                         file_abs = os.path.join(root, file_base) + '.uasset'
                         file_rel = os.path.relpath(file_abs, umodel_export_dir)
 
                         print(f"\n\nImporting asset {file_rel}...")
-                        self._load_asset(context=context,
-                                         asset_dir=asset_dir,
-                                         asset_path=file_rel,
-                                         umodel_export_dir=umodel_export_dir,
-                                         load=False,
-                                         db=db,
-                                         game_profile=profile.game)
+                        
+                        if self.link_to_scene and self.append_to_scene:
+                            return self._op_message('ERROR', "Come on, 'Link' or 'Append'—you can't have both!")
+                        elif self.link_to_scene:
+                            # Load created assets into current scene by linking
+                            self._load_asset_linked(context=context, asset_dir=asset_dir, asset_path=file_rel,
+                                                    umodel_export_dir=umodel_export_dir, game_profile=profile.game)
+                        elif self.append_to_scene:
+                            # Load created assets into current scene by appending
+                            self._load_asset_appended(context=context, asset_dir=asset_dir, asset_path=file_rel,
+                                                    umodel_export_dir=umodel_export_dir, game_profile=profile.game)
+                        elif self.overwrite_existed:
+                            self._load_asset(context=context, asset_dir=asset_dir, asset_path=file_rel,
+                                            umodel_export_dir=umodel_export_dir, load=True, db=db, game_profile=profile.game)
+                        else:
+                            # Default behavior: asset is imported into the library but not loaded into the scene.
+                            self._load_asset(context=context, asset_dir=asset_dir, asset_path=file_rel,
+                                            umodel_export_dir=umodel_export_dir, load=False, db=db, game_profile=profile.game)
 
                         progress_bar.update(1)
 
@@ -295,7 +308,7 @@ class UMODELTOOLS_OT_realign_asset(bpy.types.Operator):
     def execute(self, context: bpy.types.Context) -> set[str]:
 
         if not len(context.selected_objects) == 2:
-            self.report({'ERROR'}, "Exactly 2 objects must be selected.")
+            self.report({'ERROR'}, "Exactly 2 objects mathutilsst be selected.")
             return {'CANCELLED'}
 
         asset_idx = None
@@ -305,7 +318,7 @@ class UMODELTOOLS_OT_realign_asset(bpy.types.Operator):
                 break
 
         if asset_idx is None:
-            self.report({'ERROR'}, "One of the objects must be an Unreal asset.")
+            self.report({'ERROR'}, "One of the objects mathutilsst be an Unreal asset.")
             return {'CANCELLED'}
 
         asset_obj = context.selected_objects[asset_idx]

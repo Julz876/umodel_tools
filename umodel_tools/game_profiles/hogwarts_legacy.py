@@ -69,6 +69,14 @@ TEXTURE_PARAM_NAME_TRS = {
     "mroh/sroh a map": TextureMapTypes.MROH,
     "mro a map": TextureMapTypes.MROH,
 
+    "Diffuse Map": TextureMapTypes.Diffuse,
+    "MRO Map": TextureMapTypes.MRO,
+    "Normal Map": TextureMapTypes.Normal,
+
+    "D": TextureMapTypes.Diffuse,
+    "MRO": TextureMapTypes.MRO,
+    "N": TextureMapTypes.Normal,
+
     # Weird stuff goes here
     "color glass": TextureMapTypes.Diffuse,
     "base color": TextureMapTypes.Diffuse,
@@ -145,25 +153,28 @@ def handle_material_texture_pbr(mat: bpy.types.Material,
             mat_ctx.diffuse_connected = True
 
         case TextureMapTypes.Normal:
+            img_node.image.colorspace_settings.name = 'Non-Color'
             normal_map_node = mat.node_tree.nodes.new('ShaderNodeNormalMap')
-            mat.node_tree.links.new(normal_map_node.outputs['Normal'],
-                                    bsdf_node.inputs['Normal'])
-            mat.node_tree.links.new(img_node.outputs['Color'],
-                                    normal_map_node.inputs['Color'])
+            mat.node_tree.links.new(normal_map_node.outputs['Normal'],bsdf_node.inputs['Normal'])
+            mat.node_tree.links.new(img_node.outputs['Color'],normal_map_node.inputs['Color'])
+
         case TextureMapTypes.SRO:
+            img_node.image.colorspace_settings.name = 'Non-Color'
             sro_split = mat.node_tree.nodes.new('ShaderNodeSeparateColor')
             mat.node_tree.links.new(sro_split.outputs['Red'], bsdf_node.inputs['Specular'])
             mat.node_tree.links.new(sro_split.outputs['Green'], bsdf_node.inputs['Roughness'])
             mat.node_tree.links.new(sro_split.outputs['Blue'], ao_mix_node.inputs[7])
             mat.node_tree.links.new(img_node.outputs['Color'], sro_split.inputs['Color'])
+
         case TextureMapTypes.MROH:
             # MRO components
+            img_node.image.colorspace_settings.name = 'Non-Color'
             mroh_split = mat.node_tree.nodes.new('ShaderNodeSeparateColor')
             mat.node_tree.links.new(mroh_split.outputs['Red'], bsdf_node.inputs['Metallic'])
             mat.node_tree.links.new(mroh_split.outputs['Green'], bsdf_node.inputs['Roughness'])
             mat.node_tree.links.new(mroh_split.outputs['Blue'], ao_mix_node.inputs[7])
             mat.node_tree.links.new(img_node.outputs['Color'], mroh_split.inputs['Color'])
-
+            
             # height component
             displacement_node = mat.node_tree.nodes.new('ShaderNodeDisplacement')
             mat.node_tree.links.new(displacement_node.outputs['Displacement'],
@@ -171,6 +182,7 @@ def handle_material_texture_pbr(mat: bpy.types.Material,
             mat.node_tree.links.new(img_node.outputs['Alpha'],
                                     displacement_node.inputs['Height'])
         case TextureMapTypes.MRO:
+            img_node.image.colorspace_settings.name = 'Non-Color'
             mro_split = mat.node_tree.nodes.new('ShaderNodeSeparateColor')
             mat.node_tree.links.new(mro_split.outputs['Red'], bsdf_node.inputs['Metallic'])
             mat.node_tree.links.new(mro_split.outputs['Green'], bsdf_node.inputs['Roughness'])
@@ -181,6 +193,7 @@ def handle_material_texture_pbr(mat: bpy.types.Material,
             mat_ctx.msk_index += 1
 
         case TextureMapTypes.MSK:
+            img_node.image.colorspace_settings.name = 'Non-Color'
             mat_ctx = _state_buffer[mat]
             mask_colors = _get_mask_colors(ast=mat_ctx.desc_ast)
 
@@ -241,11 +254,11 @@ def end_process_material(mat: bpy.types.Material):
 
     if mat_ctx.use_pbr and mat_ctx.bsdf_node is not None:
         # set defaults
-        mat_ctx.bsdf_node.inputs[4].default_value = 1.01  # Subsurface IOR
-        mat_ctx.bsdf_node.inputs[7].default_value = 0.0  # Specular
-        mat_ctx.bsdf_node.inputs[9].default_value = 0.0  # Roughness
-        mat_ctx.bsdf_node.inputs[13].default_value = 0.0  # Sheen Tint
-        mat_ctx.bsdf_node.inputs[15].default_value = 0.0  # Clearcoat roughness
+        mat_ctx.bsdf_node.inputs[2].default_value = 0.0 # Roughness
+        mat_ctx.bsdf_node.inputs[3].default_value = 1.01  # IOR
+        # mat_ctx.bsdf_node.inputs[7].default_value = 0.0  # Specular
+        # mat_ctx.bsdf_node.inputs[24].default_value = 0.0  # Sheen Tint
+        # mat_ctx.bsdf_node.inputs[20].default_value = 0.0  # Clearcoat roughness
 
     del _state_buffer[mat]
 
@@ -253,7 +266,6 @@ def end_process_material(mat: bpy.types.Material):
 
 
 Color: t.TypeAlias = tuple[float, float, float]
-
 
 def _get_mask_colors(ast: lark.Tree) -> dict[str, Color]:
     """Get MSK colors from texture parameters.
